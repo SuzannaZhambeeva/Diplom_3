@@ -1,47 +1,43 @@
 import allure
-from pages.main_page import MainPage
-from pages.restore_page import RestorePage
+from locators import RestorePageLocators
+from urls import Urls
+from data import get_user_data
+from pages.login_page import LoginPage
+from pages.login_page import RestorePasswordPage
+
 
 @allure.feature("Восстановление пароля")
-class TestRestorePassword:
+class TestPasswordRestore:
+      
+    @allure.title("Переход на страницу восстановления пароля")
+    def test_go_to_recover_password(self, driver):
+        login_page = LoginPage(driver)
+        driver.get(Urls.LOGIN_URL)
+        login_page.restore_password()
+        assert Urls.RECOVER_PASSWORD in driver.current_url
 
-    @allure.story("Переход на страницу восстановления пароля")
-    def test_go_to_restore_page(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
-        main_page = MainPage(driver)
-        restore_page = RestorePage(driver)
+    @allure.title("Ввод email и клик по кнопке 'Восстановить'")
+    def test_recover_password(self, driver):
+        email, _ = get_user_data()
+        restore_page = RestorePasswordPage(driver)
+        driver.get(Urls.RECOVER_PASSWORD)
+        restore_page.enter_email(email)
+        restore_page.click_recover()
+        restore_page.wait_until_clickable(RestorePageLocators.NEW_PASSWORD_FIELD)
+        assert "reset-password" in driver.current_url
 
-        main_page.go_to_account()
-        restore_page.go_to_restore_page()
-
-        assert restore_page.is_email_field_visible()
-
-    @allure.story("Ввод email и клик по кнопке Восстановить")
-    def test_restore_email(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
-        main_page = MainPage(driver)
-        restore_page = RestorePage(driver)
-
-        main_page.go_to_account()
-        restore_page.go_to_restore_page()
-
-        restore_page.enter_email("test@mail.com")
-        restore_page.click_restore()
-
-        assert "Проверьте почту" in driver.page_source or "Восстановление" in driver.page_source
-
-    @allure.story("Показ/скрытие пароля делает поле активным")
-    def test_toggle_password_visibility(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
-        main_page = MainPage(driver)
-        restore_page = RestorePage(driver)
-
-        main_page.go_to_account()
-        restore_page.go_to_restore_page()
-
-        # сначала вводим почту и жмём "Восстановить", чтобы появилось поле нового пароля
-        restore_page.enter_email("test@mail.com")
-        restore_page.click_restore()
-
-        restore_page.toggle_password_visibility()
-        assert restore_page.is_password_field_active() is True
+    @allure.title("Проверка активации поля пароля")
+    def test_show_hide_password(self, driver):
+        email, password = get_user_data()
+        restore_page = RestorePasswordPage(driver)
+        driver.get(Urls.RECOVER_PASSWORD)
+        restore_page.enter_email(email)
+        restore_page.click_recover()
+        restore_page.wait_until_clickable(RestorePageLocators.NEW_PASSWORD_FIELD)
+        restore_page.input_text(RestorePageLocators.NEW_PASSWORD_FIELD, password)
+        restore_page.click_show_hide_password()
+        element = restore_page.wait_until_visible(RestorePageLocators.NEW_PASSWORD_FIELD)
+        element_border = driver.find_element(*RestorePageLocators.NEW_PASSWORD)
+        assert element.get_attribute("value") == password
+        assert element_border.value_of_css_property("border") != "2px solid rgb(47, 47, 55)"
+        assert "input_status_active" in element_border.get_attribute("class").split()

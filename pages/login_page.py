@@ -1,23 +1,30 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import allure
+from pages.base_page import BasePage
+from locators import LoginPageLocators, RestorePageLocators
 
-class LoginPageLocators:
-    LOGIN_EMAIL_FIELD = (By.NAME, "name")
-    LOGIN_PASSWORD_FIELD = (By.NAME, "Пароль")
-    ENTER_BUTTON = (By.XPATH, "//button[text()='Войти']")
 
-class LoginPage:
-    def __init__(self, driver: WebDriver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
-        self.url = "https://stellarburgers.nomoreparties.site/login"
+class LoginPage(BasePage):
 
-    def open(self):
-        self.driver.get(self.url)
-
+    @allure.step("Авторизация пользователя")
     def login(self, email, password):
-        self.wait.until(EC.visibility_of_element_located(LoginPageLocators.LOGIN_EMAIL_FIELD)).send_keys(email)
-        self.driver.find_element(*LoginPageLocators.LOGIN_PASSWORD_FIELD).send_keys(password)
-        self.driver.find_element(*LoginPageLocators.ENTER_BUTTON).click()
+        self.input_text(LoginPageLocators.LOGIN_EMAIL, email)
+        self.input_text(LoginPageLocators.LOGIN_PASSWORD, password)
+        self.click_element(LoginPageLocators.ENTER_BUTTON)
+
+    @allure.step("Переход на страницу восстановления пароля")
+    def restore_password(self):
+        self.click_element(RestorePageLocators.PASSWORD_RESTORE)
+
+class RestorePasswordPage(BasePage):
+
+    @allure.step("Ввод email для восстановления")
+    def enter_email(self, email):
+        self.input_text(RestorePageLocators.EMAIL_FIELD, email)
+
+    @allure.step("Нажатие по кнопке 'Восстановить'")
+    def click_recover(self):
+        self.click_element(RestorePageLocators.RESTORE_BUTTON)
+
+    @allure.step("Нажатие по кнопке показать/скрыть пароль")
+    def click_show_hide_password(self):
+        self.click_element(RestorePageLocators.VISIBILITY_PASSWORD)

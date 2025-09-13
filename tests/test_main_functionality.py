@@ -1,79 +1,60 @@
-import pytest
 import allure
-from selenium.webdriver.support import expected_conditions as EC
-from locators import MainPageLocators
 from pages.main_page import MainPage
+from pages.login_page import LoginPage
+from locators import MainPageLocators
+from urls import Urls
+from data import get_existing_user
 
 
-@allure.feature("Проверка основного функционала")
+@allure.feature("Основной функционал")
 class TestMainFunctionality:
-
-    @allure.story("Переход по клику на «Конструктор»")
-    def test_go_to_constructor(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    
+    @allure.title("Переход в конструктор")
+    def test_open_constructor(self, driver):
         main_page = MainPage(driver)
+        driver.get(Urls.ORDER_FEED)
+        main_page.open_constructor()
+        assert Urls.ROOT + "/" == driver.current_url
 
-        main_page.go_to_constructor()
-        main_page.wait.until(EC.visibility_of_element_located(MainPageLocators.CONSTRUCTOR_BUTTON))
-
-        assert driver.find_element(*MainPageLocators.CONSTRUCTOR_BUTTON).is_displayed()
-
-    @allure.story("Переход по клику на «Лента заказов»")
-    def test_go_to_order_feed(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    @allure.title("Переход в ленту заказов")
+    def test_open_order_feed(self, driver):
         main_page = MainPage(driver)
+        driver.get(Urls.ROOT)
+        main_page.open_order_feed()
+        assert Urls.ORDER_FEED in driver.current_url
 
-        main_page.go_to_order_feed()
-        main_page.wait.until(EC.visibility_of_element_located(MainPageLocators.ORDER_FEED_LINK))
-
-        assert driver.find_element(*MainPageLocators.ORDER_FEED_LINK).is_displayed()
-
-    @allure.story("Клик на ингредиент открывает всплывающее окно с деталями")
-    def test_open_ingredient_modal(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    @allure.title("Открытие деталей ингредиента")
+    def test_ingredient_details(self, driver):
         main_page = MainPage(driver)
+        driver.get(Urls.ROOT)
+        main_page.click_ingredient()
+        assert main_page.is_modal_open(MainPageLocators.MODAL_INGREDIENT)
 
-        main_page.click_first_ingredient()
-        main_page.wait.until(EC.visibility_of_element_located(MainPageLocators.MODAL_INGREDIENT_DETAILS))
-
-        assert driver.find_element(*MainPageLocators.MODAL_INGREDIENT_DETAILS).is_displayed()
-
-    @allure.story("Закрытие всплывающего окна кликом по крестику")
-    def test_close_ingredient_modal(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    @allure.title("Закрытие модального окна деталей")
+    def test_close_ingredient_details(self, driver):
         main_page = MainPage(driver)
+        driver.get(Urls.ROOT)
+        main_page.click_ingredient()
+        main_page.close_modal(MainPageLocators.MODAL_CLOSE_BUTTON)
+        assert main_page.is_modal_closed(MainPageLocators.MODAL_CLOSE_BUTTON)
 
-        main_page.click_first_ingredient()
-        close_button = main_page.wait.until(EC.element_to_be_clickable(MainPageLocators.MODAL_CLOSE_BUTTON))
-        close_button.click()
-
-        main_page.wait.until(EC.invisibility_of_element_located(MainPageLocators.MODAL_INGREDIENT_DETAILS))
-
-    @allure.story("При добавлении ингредиента увеличивается каунтер")
-    def test_add_ingredient_increases_counter(self, driver):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    @allure.title("Увеличение счетчика ингредиента при перетаскивании")
+    def test_ingredient_counter(self, driver):
         main_page = MainPage(driver)
+        driver.get(Urls.ROOT)
+        initial_counter = main_page.get_ingredient_counter()
+        main_page.add_ingredient_to_order() 
+        assert main_page.get_ingredient_counter() > initial_counter, f"Счетчик не увеличился: было {initial_counter}, стало {main_page.get_ingredient_counter()}"
 
-        before = main_page.get_first_ingredient_counter()
-        main_page.drag_first_ingredient_to_constructor()
-        after = main_page.get_first_ingredient_counter()
-
-        assert after == before + 1, f"Ожидалось {before+1}, но получено {after}"
-
-    @allure.story("Залогиненный пользователь может оформить заказ")
-    @pytest.mark.usefixtures("user")
-    def test_logged_in_user_can_make_order(self, driver, user):
-        driver.get("https://stellarburgers.nomoreparties.site")
+    @allure.title("Оформление заказа авторизованным пользователем")
+    def test_place_order(self, driver):
+        email, password = get_existing_user()
         main_page = MainPage(driver)
+        login_page = LoginPage(driver)
 
-        # Логин
-        main_page.login(user["email"], user["password"])
-
-        # Добавляем ингредиент в заказ
-        main_page.drag_first_ingredient_to_constructor()
-
-        # Оформляем заказ
-        main_page.click_order_button()
-        main_page.wait.until(EC.visibility_of_element_located(MainPageLocators.ORDER_MODAL_WINDOW))
-
-        assert driver.find_element(*MainPageLocators.ORDER_MODAL_WINDOW).is_displayed()
+        driver.get(Urls.ROOT)
+        main_page.open_account()
+        login_page.login(email, password)
+        main_page.add_ingredient_to_order()
+        main_page.place_order()
+        assert main_page.is_modal_open(MainPageLocators.ORDER_MODAL_WINDOW)
