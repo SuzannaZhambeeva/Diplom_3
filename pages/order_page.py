@@ -24,3 +24,39 @@ class OrderFeedPage(BasePage):
     @allure.step("Получение значения счетчика 'Выполнено за сегодня'")
     def get_today_completed(self):
         return int(self.get_element_text(MainPageLocators.TODAY_COMPLETED))
+
+    # @allure.step("Получение текста заказа из модального окна")
+    # def get_order_number_from_modal(self):
+    #     return self.get_element_text(MainPageLocators.ORDER_NUMBER)
+
+    # @allure.step("Список заказов 'В работе'")
+    # def get_orders_in_progress(self):
+    #     elements = self.driver.find_elements(*MainPageLocators.ORDER_NUMBER_IN_PROCCESS)
+    #     return [el.text for el in elements]
+
+    # @allure.step("Ожидание заказа в разделе 'В работе'")
+    # def wait_for_order_in_progress(self, order_number, timeout=10):
+    #     """Ждёт появления заказа с номером order_number в блоке 'В работе'"""
+    #     self.wait.until(
+    #         EC.text_to_be_present_in_element(MainPageLocators.ORDER_NUMBER_IN_PROCCESS, order_number)
+    #     )
+    #     return True
+
+    @allure.step("Получение текста заказа из модального окна")
+    def get_order_number_from_modal(self):
+        return self.get_element_text(MainPageLocators.ORDER_NUMBER)
+
+    @allure.step("Список заказов 'В работе'")
+    def get_orders_in_progress(self):
+        elements = self.driver.find_elements(*MainPageLocators.ORDER_NUMBER_IN_PROCCESS)
+        return [el.text for el in elements]
+
+    @allure.step("Список заказов 'Готово'")
+    def get_orders_ready(self):
+        elements = self.driver.find_elements(*MainPageLocators.ORDER_ITEM)
+        return [el.text for el in elements]
+    
+    @allure.step("Закрытие модалки заказа и ожидание её исчезновения")
+    def close_order_modal_and_wait(self):
+        self.click_element(MainPageLocators.ORDER_WINDOW_CLOSE_BUTTON)
+        self.wait_until_invisible(MainPageLocators.ORDER_WINDOW)

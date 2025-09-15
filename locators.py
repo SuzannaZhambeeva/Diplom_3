@@ -83,8 +83,9 @@ class MainPageLocators:
     )
     ORDER_NUMBER_IN_PROCCESS = (
         By.XPATH, 
-        "//ul[contains(@class, 'OrderFeed_orderListReady')]/li[contains(@class, 'text')]"
+        "//ul[contains(@class, 'OrderFeed_orderListInWork')]/li"
     )
+
     ORDER_WINDOW = (
         By.XPATH, 
         "//div[contains(@class, 'Modal_modal__container')]/div/h2[text() ='Флюоресцентный бургер']"
